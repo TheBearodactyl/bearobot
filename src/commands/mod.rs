@@ -9,9 +9,11 @@ pub use music::*;
 #[poise::command(
     prefix_command,
     slash_command,
-    subcommands("song", "list", "my_suggestions", "delete"),
+    subcommands("request_song", "list", "my_requests", "delete"),
     subcommand_required,
-    category = "Misc"
+    category = "Misc",
+    install_context = "Guild|User",
+    interaction_context = "Guild|BotDm|PrivateChannel"
 )]
 pub async fn suggest(_: Context<'_>) -> Result<()> {
     Ok(())

@@ -1,9 +1,16 @@
 use crate::database;
 use crate::error::{Context, Result, bot_error};
 
+/// Makes a song request entry for me to listen to later
 #[tracing::instrument]
-#[poise::command(prefix_command, slash_command)]
-pub async fn song(
+#[poise::command(
+    prefix_command,
+    slash_command,
+    install_context = "Guild|User",
+    interaction_context = "Guild|BotDm|PrivateChannel",
+    category = "Music"
+)]
+pub async fn request_song(
     ctx: Context<'_>,
     #[description = "The name of the song"] song_name: Option<String>,
     #[description = "The song artist/band"] artist: Option<String>,
@@ -50,8 +57,15 @@ pub async fn song(
     Ok(())
 }
 
+/// List all active song requests
 #[tracing::instrument]
-#[poise::command(prefix_command, slash_command)]
+#[poise::command(
+    prefix_command,
+    slash_command,
+    install_context = "Guild|User",
+    interaction_context = "Guild|BotDm|PrivateChannel",
+    category = "Music"
+)]
 pub async fn list(
     ctx: Context<'_>,
     #[description = "Number of suggestions to show (max 50)"] limit: Option<i32>,
@@ -66,17 +80,12 @@ pub async fn list(
     let suggestions = database::get_song_suggestions(&ctx.data().database, limit).await?;
 
     if suggestions.is_empty() {
-        ctx.say(
-            "No song suggestions found! Be the first to suggest a song with `/suggest song`.",
-        )
-        .await?;
+        ctx.say("No song suggestions found! Be the first to suggest a song with `/suggest song`.")
+            .await?;
         return Ok(());
     }
 
-    let mut response = format!(
-        "**Latest {} Song Suggestions** 🎵\n\n",
-        suggestions.len()
-    );
+    let mut response = format!("**Latest {} Song Suggestions**\n\n", suggestions.len());
 
     for (index, suggestion) in suggestions.iter().enumerate().take(10) {
         response.push_str(&format!(
@@ -107,9 +116,16 @@ pub async fn list(
     Ok(())
 }
 
+/// List all suggestions made by you
 #[tracing::instrument]
-#[poise::command(prefix_command, slash_command)]
-pub async fn my_suggestions(
+#[poise::command(
+    prefix_command,
+    slash_command,
+    install_context = "Guild|User",
+    interaction_context = "Guild|BotDm|PrivateChannel",
+    category = "Music"
+)]
+pub async fn my_requests(
     ctx: Context<'_>,
     #[description = "Number of your suggestions to show (max 20)"] limit: Option<i32>,
 ) -> Result<()> {
@@ -132,7 +148,7 @@ pub async fn my_suggestions(
         return Ok(());
     }
 
-    let mut response = format!("**Your {} Song Suggestions** 🎵\n\n", suggestions.len());
+    let mut response = format!("**Your {} Song Suggestions**\n\n", suggestions.len());
 
     for (index, suggestion) in suggestions.iter().enumerate() {
         response.push_str(&format!(
@@ -156,8 +172,15 @@ pub async fn my_suggestions(
     Ok(())
 }
 
+/// Delete a song request based on its ID
 #[tracing::instrument]
-#[poise::command(prefix_command, slash_command)]
+#[poise::command(
+    prefix_command,
+    slash_command,
+    install_context = "Guild|User",
+    interaction_context = "Guild|BotDm|PrivateChannel",
+    category = "Music"
+)]
 pub async fn delete(
     ctx: Context<'_>,
     #[description = "ID of the suggestion to delete"] suggestion_id: i64,
