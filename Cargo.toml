@@ -1,0 +1,19 @@
+[package]
+name = "bearobot"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+anyhow = "1.0.99"
+chrono = { version = "0.4.42", features = ["serde"] }
+dotenv = "0.15.0"
+poise = "0.6.1"
+regex = "1.11.2"
+reqwest = { version = "0.12.23", features = ["json", "stream"] }
+serde = { version = "1.0.225", features = ["derive"] }
+serde_json = "1.0.145"
+serenity = "0.12.4"
+sqlx = { version = "0.8.6", features = ["chrono", "macros", "runtime-tokio-rustls", "sqlite"] }
+tokio = { version = "1.47.1", features = ["full"] }
+tracing = "0.1.41"
+tracing-subscriber = { version = "0.3.20", features = ["env-filter", "fmt", "json", "local-time"] }

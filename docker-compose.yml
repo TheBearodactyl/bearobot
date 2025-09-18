@@ -1,0 +1,24 @@
+services:
+  bearobot:
+    build: .
+    container_name: bearobot-discord
+    restart: unless-stopped
+    ports:
+      - "2379:2379"
+    environment:
+      - DISCORD_TOKEN=${DISCORD_TOKEN}
+      - DATABASE_URL=${DATABASE_URL}
+    env_file:
+      - .env
+    volumes:
+      - ./db:/app/db
+      - bearobot_data:/app/data
+    networks:
+      - bearobot-network
+
+networks:
+  bearobot-network:
+    driver: bridge
+
+volumes:
+  bearobot_data:
