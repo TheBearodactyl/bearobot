@@ -1,46 +1,46 @@
 use crate::database;
 use crate::error::{Context, Result, bot_error};
 
-/// Makes a song request entry for me to listen to later
+/// Makes a game request entry for me to play later
 #[tracing::instrument]
 #[poise::command(
     prefix_command,
     slash_command,
     install_context = "Guild|User",
     interaction_context = "Guild|BotDm|PrivateChannel",
-    category = "Music"
+    category = "Games"
 )]
-pub async fn request_song(
+pub async fn request_game(
     ctx: Context<'_>,
-    #[description = "The name of the song"] song_name: Option<String>,
-    #[description = "The song artist/band"] artist: Option<String>,
+    #[description = "The name of the game"] game_name: Option<String>,
+    #[description = "The game developer"] developer: Option<String>,
 ) -> Result<()> {
     tracing::info!(
         user_id = %ctx.author().id,
         user_name = %ctx.author().name,
         guild_id = ?ctx.guild_id(),
-        "Song suggestion command invoked"
+        "Game suggestion command invoked"
     );
 
-    let song_name = song_name
+    let game_name = game_name
         .filter(|s| !s.trim().is_empty())
-        .ok_or_else(|| bot_error("Song name cannot be empty"))?;
+        .ok_or_else(|| bot_error("Game name cannot be empty"))?;
 
-    let artist = artist
+    let developer = developer
         .filter(|s| !s.trim().is_empty())
-        .ok_or_else(|| bot_error("Artist name cannot be empty"))?;
+        .ok_or_else(|| bot_error("Developer name cannot be empty"))?;
 
-    let suggestion_id = database::save_song_suggestion(
+    let suggestion_id = database::save_game_suggestion(
         &ctx.data().database,
-        &song_name,
-        &artist,
+        &game_name,
+        &developer,
         &ctx.author().id.to_string(),
         &ctx.author().name,
     )
     .await?;
 
     let response = format!(
-        "**Song Suggestion #{suggestion_id}** \n**Song:** {song_name}\n**Artist:** {artist}\n**Suggested by:** {}",
+        "**Game Suggestion #{suggestion_id}** \n**Game:** {game_name}\n**Developer:** {developer}\n**Suggested by:** {}",
         ctx.author().name
     );
 
@@ -48,25 +48,25 @@ pub async fn request_song(
 
     tracing::info!(
         suggestion_id = %suggestion_id,
-        song_name = %song_name,
-        artist = %artist,
+        game_name = %game_name,
+        developer = %developer,
         user_id = %ctx.author().id,
-        "Song suggestion saved successfully"
+        "Game suggestion saved successfully"
     );
 
     Ok(())
 }
 
-/// List all active song requests
+/// List all active game requests
 #[tracing::instrument]
 #[poise::command(
     prefix_command,
     slash_command,
     install_context = "Guild|User",
     interaction_context = "Guild|BotDm|PrivateChannel",
-    category = "Music"
+    category = "Games"
 )]
-pub async fn list_songs(
+pub async fn list_games(
     ctx: Context<'_>,
     #[description = "Number of suggestions to show (max 50)"] limit: Option<i32>,
 ) -> Result<()> {
@@ -77,22 +77,22 @@ pub async fn list_songs(
     );
 
     let limit = limit.map(|l| l.clamp(1, 50));
-    let suggestions = database::get_song_suggestions(&ctx.data().database, limit).await?;
+    let suggestions = database::get_game_suggestions(&ctx.data().database, limit).await?;
 
     if suggestions.is_empty() {
-        ctx.say("No song suggestions found! Be the first to suggest a song with `/suggest song`.")
+        ctx.say("No game suggestions found! Be the first to suggest a game with `/suggest game`.")
             .await?;
         return Ok(());
     }
 
-    let mut response = format!("**Latest {} Song Suggestions**\n\n", suggestions.len());
+    let mut response = format!("**Latest {} Game Suggestions**\n\n", suggestions.len());
 
     for (index, suggestion) in suggestions.iter().enumerate().take(10) {
         response.push_str(&format!(
-            "**{}. {}** by {}\n   *Suggested by {} (ID: {})*\n\n",
+            "**{}. {}** developed by {}\n   *Suggested by {} (ID: {})*\n\n",
             index + 1,
-            suggestion.song_name,
-            suggestion.artist,
+            suggestion.game_name,
+            suggestion.developer,
             suggestion.suggested_by_name,
             suggestion.id
         ));
@@ -116,16 +116,16 @@ pub async fn list_songs(
     Ok(())
 }
 
-/// List all suggestions made by you
+/// List all game requests made by you
 #[tracing::instrument]
 #[poise::command(
     prefix_command,
     slash_command,
     install_context = "Guild|User",
     interaction_context = "Guild|BotDm|PrivateChannel",
-    category = "Music"
+    category = "Games"
 )]
-pub async fn my_song_requests(
+pub async fn my_game_requests(
     ctx: Context<'_>,
     #[description = "Number of your suggestions to show (max 20)"] limit: Option<i32>,
 ) -> Result<()> {
@@ -136,7 +136,7 @@ pub async fn my_song_requests(
     );
 
     let limit = limit.map(|l| l.clamp(1, 20));
-    let suggestions = database::get_song_suggestions_by_user(
+    let suggestions = database::get_game_suggestions_by_user(
         &ctx.data().database,
         &ctx.author().id.to_string(),
         limit,
@@ -144,18 +144,18 @@ pub async fn my_song_requests(
     .await?;
 
     if suggestions.is_empty() {
-        ctx.say("You haven't suggested any songs yet! Use `/suggest song` to add your first suggestion.").await?;
+        ctx.say("You haven't suggested any games yet! Use `/suggest game` to add your first suggestion.").await?;
         return Ok(());
     }
 
-    let mut response = format!("**Your {} Song Suggestions**\n\n", suggestions.len());
+    let mut response = format!("**Your {} Game Suggestions**\n\n", suggestions.len());
 
     for (index, suggestion) in suggestions.iter().enumerate() {
         response.push_str(&format!(
-            "**{}. {}** by {}\n   *Suggested on {} (ID: {})*\n\n",
+            "**{}. {}** developed by {}\n   *Suggested on {} (ID: {})*\n\n",
             index + 1,
-            suggestion.song_name,
-            suggestion.artist,
+            suggestion.game_name,
+            suggestion.developer,
             suggestion.created_at.format("%Y-%m-%d %H:%M UTC"),
             suggestion.id
         ));
@@ -172,16 +172,16 @@ pub async fn my_song_requests(
     Ok(())
 }
 
-/// Delete a song request based on its ID
+/// Delete a game request based on its ID
 #[tracing::instrument]
 #[poise::command(
     prefix_command,
     slash_command,
     install_context = "Guild|User",
     interaction_context = "Guild|BotDm|PrivateChannel",
-    category = "Music"
+    category = "Games"
 )]
-pub async fn delete_song_request(
+pub async fn delete_game_request(
     ctx: Context<'_>,
     #[description = "ID of the suggestion to delete"] suggestion_id: i64,
 ) -> Result<()> {
@@ -191,7 +191,7 @@ pub async fn delete_song_request(
         "Delete suggestion command invoked"
     );
 
-    let deleted = database::delete_song_suggestion(
+    let deleted = database::delete_game_suggestion(
         &ctx.data().database,
         suggestion_id,
         &ctx.author().id.to_string(),
@@ -207,7 +207,7 @@ pub async fn delete_song_request(
         tracing::info!(
             user_id = %ctx.author().id,
             suggestion_id = %suggestion_id,
-            "Song suggestion deleted successfully"
+            "Game suggestion deleted successfully"
         );
     } else {
         ctx.say("Suggestion not found or you don't have permission to delete it.")

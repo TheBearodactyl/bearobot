@@ -20,7 +20,7 @@ impl Config {
             .context("DISCORD_TOKEN environment variable is required")?;
 
         let database_path = std::env::var("DATABASE_PATH")
-            .unwrap_or_else(|_| "./db/bearodata.sqlite".to_string())
+            .unwrap_or_else(|_| "./db/bearobot.sqlite".to_string())
             .into();
 
         Ok(Self {
